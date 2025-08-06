@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auth - Testing</title>
+  </head>
+  <body>
+    <h1>Authentication</h1>
+    <p>There are different types of authentication methods:</p>
+    <ul>
+      <li>Basic</li>
+      <li>Token</li>
+      <li>Session</li>
+      <li>JWT</li>
+      <li>OAuth</li>
+    </ul>
+  </body>
+  <script>
+    fetch("http://localhost/api/", {
+      method: "GET",
+      headers: {
+        "WWW-Authenticate": "Basic realm='GoApplication'",
+      },
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((res) => console.log(res))
+      .catch((err) => console.error(err));
+  </script>
+</html>
