@@ -3,7 +3,6 @@ package basic
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -11,12 +10,11 @@ import (
 
 func getCredentialsFromAuthHeader(authHeader string) (string, string, error) {
 	credentials := strings.Replace(authHeader, "Basic", "", 1)
-	fmt.Println("Credentials: ", credentials)
+	credentials = strings.Trim(credentials, " ")
 
 	decoded, err := base64.StdEncoding.DecodeString(credentials)
 	if err != nil {
-		log.Fatal("Decode error: ", err)
-		return "", "", errors.New("Decoding failed")
+		return "", "", errors.New("error while decoding")
 	}
 
 	result := strings.Split(string(decoded), ":")
@@ -24,21 +22,29 @@ func getCredentialsFromAuthHeader(authHeader string) (string, string, error) {
 	return result[0], result[1], nil
 }
 
+func httpAuthError(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", "Basic realm='BasicAuth'")
+	w.WriteHeader(http.StatusUnauthorized)
+}
+
 func BasicAuthMiddleware(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authorizationHeader := r.Header.Get("Authorization")
+		if authorizationHeader == "" {
+			httpAuthError(w)
+			return
+		}
 
 		username, password, err := getCredentialsFromAuthHeader(authorizationHeader)
 		if err != nil {
-			w.Header().Add("WWW-Authenticate", "Basic realm='BasicAuth'")
-			http.Error(w, http.StatusText(http.StatusNetworkAuthenticationRequired), http.StatusNetworkAuthenticationRequired)
+			log.Fatal(err)
+			httpAuthError(w)
 			return
 		}
 
 		if (username != "arup") || (password != "1234") {
-			log.Fatal("Incorrect credentials")
-			w.Header().Add("WWW-Authenticate", "Basic realm='BasicAuth'")
-			http.Error(w, http.StatusText(http.StatusNetworkAuthenticationRequired), http.StatusNetworkAuthenticationRequired)
+			log.Fatal("incorrect credentials")
+			httpAuthError(w)
 			return
 		}
 
